@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2nd Gen Real Estate - Content Calendar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #F8F4FF;
+            font-family: 'Inter', sans-serif;
+        }
+        .active-tab {
+            border-color: #A855F7; /* Purple */
+            color: #A855F7;
+            background-color: #EDE9FE;
+        }
+        .inactive-tab {
+            border-color: transparent;
+            color: #7D7D7D;
+        }
+        .post-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .modal {
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.is-visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+            transform: scale(0.95);
+        }
+        .modal.is-visible .modal-content {
+            transform: scale(1);
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-[#333333]">2nd Gen Real Estate</h1>
+            <p class="text-xl text-[#A855F7] mt-2">Interactive Content Calendar</p>
+        </header>
+
+        <main>
+            <section id="kpi" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-sm font-semibold text-gray-500">TOTAL POSTS</h3>
+                    <p id="total-posts" class="text-3xl font-bold text-[#333333]">0</p>
+                </div>
+                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-sm font-semibold text-gray-500">KEY EVENTS</h3>
+                    <p class="text-3xl font-bold text-[#333333]">3</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-sm font-semibold text-gray-500">SPONSORS</h3>
+                    <p class="text-3xl font-bold text-[#333333]">11</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                    <h3 class="text-sm font-semibold text-gray-500">TEAMS</h3>
+                    <p class="text-3xl font-bold text-[#333333]">8</p>
+                </div>
+            </section>
+
+            <section class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-8">
+                <h3 class="text-lg font-bold text-center mb-4 text-[#A855F7]">Content Mix</h3>
+                <div class="chart-container relative mx-auto" style="max-width: 800px; height: 300px;">
+                    <canvas id="contentMixChart"></canvas>
+                </div>
+            </section>
+
+            <section id="filters" class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-8">
+                <h3 class="text-lg font-bold text-center mb-4 text-[#A855F7]">Explore the Calendar</h3>
+                <div class="flex flex-wrap justify-center gap-4">
+                     <select id="month-filter" class="filter-btn bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-700">
+                        <option value="all">All Months</option>
+                        <option value="September">September</option>
+                        <option value="October">October</option>
+                        <option value="November">November</option>
+                    </select>
+                    <select id="type-filter" class="filter-btn bg-white border border-gray-300 rounded-md px-4 py-2 text-gray-700">
+                        <option value="all">All Content Types</option>
+                        <option value="Post">Post</option>
+                        <option value="Reel">Reel</option>
+                        <option value="Story / Live">Story / Live</option>
+                        <option value="Video / Reel">Video / Reel</option>
+                        <option value="Photo / Carousel">Photo / Carousel</option>
+                    </select>
+                    <button id="reset-filters" class="bg-[#A855F7] text-white px-4 py-2 rounded-md hover:bg-[#8A3ED0] transition">Reset Filters</button>
+                </div>
+            </section>
+            
+            <section id="calendar-view" class="mt-8">
+                 <div class="border-b border-gray-200 mb-6">
+                    <nav class="-mb-px flex justify-center space-x-4 md:space-x-8" aria-label="Tabs">
+                        <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm active-tab" data-tab="september">September</button>
+                        <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm inactive-tab" data-tab="october">October</button>
+                        <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm inactive-tab" data-tab="november">November</button>
+                    </nav>
+                </div>
+
+                <div id="calendar-content">
+                    <!-- Post cards will be injected here -->
+                </div>
+                 <p id="no-results" class="text-center text-gray-500 hidden py-8">No posts match the current filters.</p>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal" class="fixed inset-0 z-50 overflow-y-auto modal">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-2xl modal-content">
+                <div class="p-6">
+                     <div class="flex justify-between items-start">
+                        <div>
+                            <p id="modal-date" class="text-sm text-gray-500"></p>
+                            <h2 id="modal-title" class="text-2xl font-bold mt-1 text-[#333333]"></h2>
+                        </div>
+                        <button id="close-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                    </div>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                           <h4 class="font-semibold text-[#A855F7]">Content Idea & Description</h4>
+                           <p id="modal-description" class="text-gray-700 mt-1"></p>
+                        </div>
+                         <div>
+                           <h4 class="font-semibold text-[#A855F7]">Visuals & Caption Notes</h4>
+                           <p id="modal-notes" class="text-gray-700 mt-1"></p>
+                        </div>
+                         <div>
+                           <h4 class="font-semibold text-[#A855F7]">Content Type</h4>
+                           <span id="modal-type" class="inline-block bg-[#FBEFFB] rounded-full px-3 py-1 text-sm font-semibold text-gray-700"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Updated calendar data with new schedule, re-numbered posts, and synthesized descriptions/notes.
+            const calendarData = [
+                // NEW SEPTEMBER POSTS (Posts 1-2)
+                { date: "Sept 29", month: "September", post: 1, type: "Post", title: "New India Contructions - Sponsors Logo", description: "A dedicated post showcasing the logo and thanking New India Constructions for their support as a key sponsor.", notes: "Use a clean, professional logo image. Caption focuses on their partnership and shared commitment to development." },
+                { date: "Sept 30", month: "September", post: 2, type: "Reel", title: "Suvidha Lifespaces - Team Owner", description: "A fast-paced reel introducing the owner or manager of the Suvidha Lifespaces team, setting the tone for their presence.", notes: "Upbeat, modern reel format. Feature a short quote or a powerful visual of the team owner with the team logo." },
+                
+                // NEW OCTOBER POSTS (Posts 3-29)
+                { date: "Oct 1", month: "October", post: 3, type: "Reel", title: "Umang Strikers - Team Owner", description: "An energetic introduction reel for the Umang Strikers' team owner, emphasizing passion and dedication.", notes: "High-quality visual of the owner. Include team color/jersey elements. Use trending reel audio." },
+                { date: "Oct 2", month: "October", post: 4, type: "Reel", title: "Ambit Spartans - Team Owner", description: "An aggressive and exciting reel introducing the Ambit Spartans team owner, focusing on their competitive spirit.", notes: "Use bold text overlays and dynamic camera movement. Caption should hype up the upcoming tournament." },
+                { date: "Oct 3", month: "October", post: 5, type: "Post", title: "Labharti Realities - Sponsors Logo", description: "A dedicated sponsor post featuring the Labharti Realities logo and a short message of appreciation.", notes: "Clean graphic with the logo. Caption highlights their commitment to the community/real estate sector." },
+                { date: "Oct 4", month: "October", post: 6, type: "Post", title: "Parsh - Sponsors Logo", description: "A professional post featuring the Parsh brand logo and acknowledging their role as a key lifestyle sponsor.", notes: "Use high contrast and clean lines for the logo presentation. Mention their connection to 'precious lifestyles'." },
+                { date: "Oct 6", month: "October", post: 7, type: "Post", title: "PNK Group - Sponsors Logo", description: "A spotlight post for PNK Group, thanking them for their sponsorship.", notes: "Feature their logo with their tagline. Emphasize their long-standing legacy or commitment to excellence." },
+                { date: "Oct 7", month: "October", post: 8, type: "Reel", title: "Legends - Team Owner", description: "A cinematic reel introducing the owner of the 'Legends' team, building mystique and excitement.", notes: "Use slow-motion and deep color grading. Caption hints at the legacy and experience brought by the owner." },
+                { date: "Oct 8", month: "October", post: 9, type: "Reel", title: "Friends Aces - Team Owner", description: "A friendly and engaging reel introducing the owner of the Friends Aces, highlighting teamwork and camaraderie.", notes: "Feature shots of the owner interacting with the team or the founders. Use positive, uplifting music." },
+                { date: "Oct 9", month: "October", post: 10, type: "Post", title: "Samarpan - Sponsors Logo", description: "A thank you post for Samarpan Homes and Developers, focusing on their support for the tournament.", notes: "Logo presentation. Caption links Samarpan's dedication to home building with their dedication to the event." },
+                { date: "Oct 10", month: "October", post: 11, type: "Post", title: "Shree Ram Krushna - Sponsors Logo", description: "A dedicated post acknowledging Shree Ram Krushna Developers as a sponsor.", notes: "Clean, respectful logo visual. Caption should mention their vision and partnership with 2nd Gen Real Estate." },
+                { date: "Oct 11", month: "October", post: 12, type: "Post", title: "Shreeji Sharan - Sponsors Logo", description: "A key sponsor post for Shreeji Sharan Group of Companies, focusing on their role as venue partner.", notes: "Use a graphic that reflects a strong foundation/building. Caption details their significant contribution to the event's location/setup." },
+                { date: "Oct 13", month: "October", post: 13, type: "Reel", title: "Jersey reveal reel with sponsors", description: "A dynamic reel showcasing the final, official jerseys of all the teams, highlighting sponsor logos.", notes: "Fast cuts of close-ups on logos, the fabric, and the teams wearing them. High-energy music. Tag all jersey sponsors." },
+                { date: "Oct 14", month: "October", post: 14, type: "Reel", title: "BTS and closing of Auction - All captains", description: "Behind-the-scenes reel capturing candid moments, interviews, and the wrap-up of the auction night with all team captains.", notes: "Use quick interview snippets and funny, unscripted moments. Focus on the captains' final thoughts post-auction." },
+                { date: "Oct 15", month: "October", post: 15, type: "Reel", title: "Practice Play - showing the efforts teams are preparing", description: "An inspiring reel showing clips of various teams practicing and preparing for the tournament.", notes: "Focus on action, sweat, and intensity. Motivational music. Caption: 'The effort behind the glory.'" },
+                { date: "Oct 16", month: "October", post: 16, type: "Post", title: "Meet The Team Players - Hindustan Titans", description: "The official roster and individual player spotlights for the Hindustan Titans team.", notes: "A carousel post with team photo, roster slide, and 2-3 key player profiles. Use consistent team branding." },
+                { date: "Oct 17", month: "October", post: 17, type: "Post", title: "Meet The Team Players - Navkar Royals", description: "The official roster and individual player spotlights for the Navkar Royals team.", notes: "Same carousel format. Highlight their key players and team motto/ethos." },
+                { date: "Oct 18", month: "October", post: 18, type: "Post", title: "Meet The Team Players - Sanghvi Smashers", description: "The official roster and individual player spotlights for the Sanghvi Smashers team.", notes: "Same carousel format. Focus on the team's 'smashing' approach and aggressive strategy." },
+                { date: "Oct 20", month: "October", post: 19, type: "Post", title: "Meet The Team Players - Suvidha Lifespaces", description: "The official roster and individual player spotlights for the Suvidha Lifespaces team.", notes: "Same carousel format. Emphasize their well-rounded team composition." },
+                { date: "Oct 21", month: "October", post: 20, type: "Reel", title: "Breaking News First time ever", description: "A dramatic 'Breaking News' style reel announcing an exciting, unprecedented feature or prize for the tournament.", notes: "Use news-ticker style graphics and a serious, investigative tone, then a reveal of the surprise." },
+                { date: "Oct 22", month: "October", post: 21, type: "Reel", title: "Meet the Team Captains - All captains", description: "A compilation reel showcasing all team captains delivering short, punchy statements about winning.", notes: "Rapid-fire edits between the 8 captains. Quote snippets in the caption." },
+                { date: "Oct 23", month: "October", post: 22, type: "Reel", title: "Turf sneak peek", description: "A high-quality, atmospheric reel showcasing the final, prepared cricket turf/venue.", notes: "Use cinematic shots, perhaps drone footage (if possible), or close-ups on the immaculate pitch. Hype up the venue." },
+                { date: "Oct 24", month: "October", post: 23, type: "Post", title: "Meet The Team Players - Legends", description: "The official roster and individual player spotlights for the Legends team.", notes: "Same carousel format. Highlight the team's most experienced/veteran players." },
+                { date: "Oct 25", month: "October", post: 24, type: "Post", title: "Meet The Team Players - Friends Ace", description: "The official roster and individual player spotlights for the Friends Ace team.", notes: "Same carousel format. Focus on team chemistry and unity." },
+                { date: "Oct 27", month: "October", post: 25, type: "Post", title: "Meet The Team Players - Ambit Spartans", description: "The official roster and individual player spotlights for the Ambit Spartans team.", notes: "Same carousel format. Emphasize their disciplined and strategic approach." },
+                { date: "Oct 28", month: "October", post: 26, type: "Post", title: "Umang strikers", description: "The official roster and individual player spotlights for the Umang Strikers team.", notes: "Same carousel format. This is the last team profile post before the main event." },
+                { date: "Oct 29", month: "October", post: 27, type: "Reel", title: "Game Night, gear up", description: "A final hype reel before the matches begin, focusing on the adrenaline and preparation.", notes: "Montage of team shots, the field, and the trophy. Use a heavy-drop beat soundtrack." },
+                { date: "Oct 30", month: "October", post: 28, type: "Reel", title: "Countdown 3", description: "Day 3 Countdown reel, building anticipation for the start of the tournament.", notes: "Simple, visually strong graphic/text overlay: '3 Days to Go!' with exciting background visuals." },
+                { date: "Oct 31", month: "October", post: 29, type: "Reel", title: "Countdown 2", description: "Day 2 Countdown reel, driving final interest before the matches.", notes: "Simple, visually strong graphic/text overlay: '2 Days to Go!' with exciting background visuals." },
+                
+                // Existing NOVEMBER EVENTS (non-numbered)
+                { date: "Nov 4", month: "November", post: "-", type: "Story / Live", title: "Match Day 1.", description: "Live updates throughout the day.", notes: "Stories with scores, photos of the action, polls, and live video." },
+                { date: "Nov 5", month: "November", post: "-", type: "Story / Live", title: "Match Day 2.", description: "Live updates throughout the day, including the final match and award ceremony.", notes: "Live updates, photos, and videos of the final moments." },
+                { date: "Nov 6", month: "November", post: "-", type: "Video / Reel", title: "Match Day Highlights Reel.", description: "A professionally edited reel of the tournament's best moments.", notes: "Slow-motion shots, great catches, sixes, and the winning moment." },
+                { date: "Nov 7", month: "November", post: "-", type: "Photo / Carousel", title: "The Champions.", description: "A post celebrating the winning team with photos from the award ceremony.", notes: "Team photo with the trophy." },
+                { date: "Nov 8", month: "November", post: "-", type: "Carousel", title: "Thank You, Sponsors.", description: "A final post with a collage of all the sponsors' logos, thanking them for their support.", notes: "A comprehensive graphic thanking all 11 sponsors." }
+            ];
+
+            const calendarContent = document.getElementById('calendar-content');
+            const monthFilter = document.getElementById('month-filter');
+            const typeFilter = document.getElementById('type-filter');
+            const resetFiltersBtn = document.getElementById('reset-filters');
+            const noResults = document.getElementById('no-results');
+            const totalPostsElement = document.getElementById('total-posts'); // Element for the KPI
+            
+            const modal = document.getElementById('modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            
+            const tabs = document.querySelectorAll('.tab');
+            let activeTab = 'september';
+
+            // Function to filter and render posts
+            const renderCalendar = (posts) => {
+                calendarContent.innerHTML = '';
+                const postsForTab = posts.filter(post => post.month.toLowerCase() === activeTab);
+
+                if (postsForTab.length === 0) {
+                    noResults.classList.remove('hidden');
+                } else {
+                    noResults.classList.add('hidden');
+                }
+                
+                const monthContainer = document.createElement('div');
+                monthContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+
+                postsForTab.forEach((post, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'post-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col cursor-pointer';
+                    card.innerHTML = `
+                        <div class="flex-grow">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-semibold text-[#A855F7]">${post.date}</span>
+                                <span class="text-xs font-medium ${post.post === '-' ? 'bg-[#EDE9FE] text-[#A855F7]' : 'bg-gray-200 text-gray-800'} px-2 py-1 rounded-full">${post.post === '-' ? 'Event' : `Post #${post.post}`}</span>
+                            </div>
+                            <h3 class="font-bold text-md text-[#333333]">${post.title}</h3>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-gray-100">
+                             <span class="text-xs text-gray-500">${post.type}</span>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => openModal(post));
+                    monthContainer.appendChild(card);
+                });
+                calendarContent.appendChild(monthContainer);
+            };
+
+            const openModal = (post) => {
+                document.getElementById('modal-date').textContent = `${post.date}, ${post.month}`;
+                document.getElementById('modal-title').textContent = post.title;
+                document.getElementById('modal-description').textContent = post.description;
+                document.getElementById('modal-notes').textContent = post.notes;
+                document.getElementById('modal-type').textContent = post.type;
+                modal.classList.add('is-visible');
+                document.body.classList.add('overflow-hidden');
+            };
+
+            const closeModal = () => {
+                modal.classList.remove('is-visible');
+                document.body.classList.remove('overflow-hidden');
+            };
+
+            const applyFilters = () => {
+                let filteredData = [...calendarData];
+                const month = monthFilter.value;
+                const type = typeFilter.value;
+
+                if (month !== 'all') {
+                    filteredData = filteredData.filter(p => p.month === month);
+                }
+                if (type !== 'all') {
+                    // Normalize the comparison since the data sometimes uses specific types (e.g., 'Post')
+                    // and the filter uses general terms ('Post'/'Reel').
+                    if (type === 'Post') {
+                        filteredData = filteredData.filter(p => p.type.includes('Post'));
+                    } else if (type === 'Reel') {
+                         filteredData = filteredData.filter(p => p.type.includes('Reel'));
+                    } else {
+                         filteredData = filteredData.filter(p => p.type === type);
+                    }
+                   
+                }
+
+                renderCalendar(filteredData);
+            };
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => {
+                        t.classList.remove('active-tab');
+                        t.classList.add('inactive-tab');
+                    });
+                    tab.classList.add('active-tab');
+                    tab.classList.remove('inactive-tab');
+                    activeTab = tab.dataset.tab;
+                    applyFilters();
+                });
+            });
+
+            monthFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+            resetFiltersBtn.addEventListener('click', () => {
+                monthFilter.value = 'all';
+                typeFilter.value = 'all';
+                // Reset tab to September after filter reset for clean start
+                tabs.forEach(t => {
+                    t.classList.remove('active-tab');
+                    t.classList.add('inactive-tab');
+                });
+                const septemberTab = document.querySelector('[data-tab="september"]');
+                septemberTab.classList.add('active-tab');
+                septemberTab.classList.remove('inactive-tab');
+                activeTab = 'september';
+
+                applyFilters();
+            });
+
+            closeModalBtn.addEventListener('click', closeModal);
+            // Close modal when clicking outside the content area
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            const setupChart = () => {
+                const ctx = document.getElementById('contentMixChart').getContext('2d');
+                // Calculate counts for only numbered posts
+                const numberedPosts = calendarData.filter(p => p.post !== '-');
+                const typeCounts = numberedPosts.reduce((acc, post) => {
+                    // Group similar types for cleaner chart
+                    let type = post.type;
+                    if (type.includes('Post')) type = 'Post';
+                    if (type.includes('Reel')) type = 'Reel';
+                    if (type.includes('Video')) type = 'Video';
+                    if (type.includes('Story')) type = 'Story/Live';
+
+                    acc[type] = (acc[type] || 0) + 1;
+                    return acc;
+                }, {});
+
+                // Update the total posts KPI
+                totalPostsElement.textContent = numberedPosts.length;
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(typeCounts),
+                        datasets: [{
+                            label: 'Number of Posts',
+                            data: Object.values(typeCounts),
+                            backgroundColor: '#FBEFFB',
+                            borderColor: '#A855F7',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                             x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1, // Ensure whole numbers for counts
+                                },
+                                grid: {
+                                    color: '#E5E7EB'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: '#333333',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 12 },
+                                cornerRadius: 4,
+                                displayColors: false
+                            }
+                        }
+                    }
+                });
+            };
+
+            applyFilters();
+            setupChart();
+        });
+    </script>
+</body>
+</html>
